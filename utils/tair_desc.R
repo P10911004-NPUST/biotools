@@ -1,19 +1,22 @@
-if (!require(dplyr)) BiocManager::install("dplyr")
-if (!require(magrittr)) BiocManager::install("magrittr")
-if (!require(BiocManager)) BiocManager::install("BiocManager")
-if (!require(GO.db)) BiocManager::install("GO.db")
-if (!require(org.At.tair.db)) BiocManager::install("org.At.tair.db")
-if (!require(AnnotationDbi)) BiocManager::install("AnnotationDbi")
-if (!require(clusterProfiler)) BiocManager::install("clusterProfiler")
-if (!require(biomartr)) BiocManager::install("biomartr")
+suppressMessages({
+    if (!require(dplyr)) BiocManager::install("dplyr")
+    if (!require(magrittr)) BiocManager::install("magrittr")
+    if (!require(BiocManager)) BiocManager::install("BiocManager")
+    if (!require(GO.db)) BiocManager::install("GO.db")
+    if (!require(org.At.tair.db)) BiocManager::install("org.At.tair.db")
+    if (!require(AnnotationDbi)) BiocManager::install("AnnotationDbi")
+    if (!require(clusterProfiler)) BiocManager::install("clusterProfiler")
+    if (!require(biomartr)) BiocManager::install("biomartr")
+    
+    library(dplyr)
+    library(magrittr)
+    library(GO.db)
+    library(org.At.tair.db)
+    library(AnnotationDbi)
+    library(clusterProfiler)
+    # library(biomartr) 
+})
 
-library(dplyr)
-library(magrittr)
-library(GO.db)
-library(org.At.tair.db)
-library(AnnotationDbi)
-library(clusterProfiler)
-# library(biomartr)
 
 # NOT RUN {
 if (FALSE){
@@ -101,24 +104,27 @@ tair_enrichGO <- function(
         OrgDb = org.At.tair.db,
         keyType = "TAIR",
         ont = ontology,  # c("ALL", "BP", "CC", "MF")
-        qvalueCutoff = 0.1,  # default: 0.2
-        pvalueCutoff = 0.01,  # default: 0.05
+        qvalueCutoff = 0.2,  # default: 0.2
+        pvalueCutoff = 0.05,  # default: 0.05
         pAdjustMethod = "BH",  # default: "ALL"
         readable = FALSE,  # TRUE: show Gene Symbol, FALSE: show TAIR_id
         pool = FALSE  # FALSE: Show ontology separately
     ) %>% 
-        clusterProfiler::simplify(.)
+        clusterProfiler::simplify()
     
     eg_df_ <- as.data.frame(eg_@result) %>% 
         tidyr::drop_na() %>% 
         dplyr::mutate_at(vars(GeneRatio, BgRatio), parse_eval) %>% 
-        dplyr::mutate(fold.enrich = as.numeric(GeneRatio / BgRatio)) %>% 
+        tidyr::drop_na() %>% 
+        dplyr::mutate(fold.enrich = as.numeric(GeneRatio) / as.numeric(BgRatio)) %>% 
         arrange(desc(GeneRatio))
     
     eg_df_$Description <- factor(
         x = eg_df_$Description, 
         levels = eg_df_ %>% dplyr::arrange(GeneRatio) %>% .$Description
     )
+    
+    if (!"ONTOLOGY" %in% colnames(eg_df_)) eg_df_$ONTOLOGY <- rep(ontology, nrow(eg_df_))
     
     if (nrow(eg_df_) > showCategory) eg_df_ <- eg_df_[1:showCategory, ]
     # eg@result$fold.enrich <- eg_df$fold.enrich
@@ -149,8 +155,8 @@ tair_enrichGO <- function(
 
 
 # ---- Show description of the GO EVIDENCE CODE -----------------------------------------
-showGOEvidenceCodes <- function(simplify = TRUE){
-    if (simplify){
+showGOEvidenceCodes <- function(detailed = FALSE){
+    if (!detailed){
         print(c("EXP", "IDA", "IPI", "IMP", "IGI", "IEP",
                 "ISS", "ISO", "ISA", "ISM", "IGC", "IBA",
                 "IBD", "IKR", "IRD", "RCA", "TAS", "NAS", 
