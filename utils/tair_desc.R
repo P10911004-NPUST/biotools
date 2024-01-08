@@ -29,6 +29,14 @@ parse_eval <- function(v){
     sapply(v, function(.x) eval(parse(text = .x)))
 }
 
+
+# ---- convert TAIR gene ids to gene symbol ------------------------------------------
+tair2symbol <- function(tair_id = NULL, ref_tair = NULL, ref_symbol = NULL){
+    res <- ref_symbol[match(tair_id, ref_tair)]
+    return(res)
+}
+
+
 # ---- Retrieve GO data based on TAIR GeneID -----------------------------------------
 tair_desc <- function(tair_id){
     stopifnot(inherits(tair_id, "character"))
@@ -40,11 +48,11 @@ tair_desc <- function(tair_id){
             keytype = "TAIR",
             columns = c(
                 "SYMBOL", 
-                "GENENAME", 
-                "GOALL", 
-                "ARACYC",  # exp. superoxide radicals degradation
-                "ARACYCENZYME",  # exp: superoxide dismutase
-                "ENZYME"  # exp: 1.15.1.1
+                "GENENAME",
+                # "ARACYC",  # exp. superoxide radicals degradation
+                # "ARACYCENZYME",  # exp: superoxide dismutase
+                # "ENZYME",  # exp: 1.15.1.1
+                "GOALL"
             )
         ) %>% 
             dplyr::select(-EVIDENCEALL, -ONTOLOGYALL) %>% 
@@ -96,7 +104,8 @@ tair_enrichGO <- function(
         universe_tair_id,
         ontology = "ALL",
         showCategory = 10,
-        returnData = FALSE
+        returnData = FALSE,
+        asSymbol = FALSE
 ){
     eg_ <- clusterProfiler::enrichGO(
         gene = tair_id,
@@ -106,8 +115,8 @@ tair_enrichGO <- function(
         ont = ontology,  # c("ALL", "BP", "CC", "MF")
         qvalueCutoff = 0.2,  # default: 0.2
         pvalueCutoff = 0.05,  # default: 0.05
-        pAdjustMethod = "BH",  # default: "ALL"
-        readable = FALSE,  # TRUE: show Gene Symbol, FALSE: show TAIR_id
+        pAdjustMethod = "BH",  # default: "BH"
+        readable = asSymbol,  # TRUE: show Gene Symbol, FALSE: show TAIR_id
         pool = FALSE  # FALSE: Show ontology separately
     ) %>% 
         clusterProfiler::simplify()
