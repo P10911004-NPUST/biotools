@@ -123,10 +123,17 @@ tair_enrichGO <- function(
     
     eg_df_ <- as.data.frame(eg_@result) %>% 
         tidyr::drop_na() %>% 
-        dplyr::mutate_at(vars(GeneRatio, BgRatio), parse_eval) %>% 
+        dplyr::mutate(
+            gene_ratio = parse_eval(GeneRatio),
+            bg_ratio = parse_eval(BgRatio),
+            rich_factor = Count / as.numeric(sub("/\\d+", "", BgRatio)),
+            fold_enrich = gene_ratio / bg_ratio
+        ) %>% 
+        # dplyr::mutate_at(vars(GeneRatio, BgRatio), parse_eval) %>% 
         tidyr::drop_na() %>% 
-        dplyr::mutate(fold.enrich = as.numeric(GeneRatio) / as.numeric(BgRatio)) %>% 
-        arrange(desc(GeneRatio))
+        # dplyr::mutate(fold.enrich = as.numeric(GeneRatio) / as.numeric(BgRatio)) %>% 
+        # arrange(desc(GeneRatio))
+        arrange(desc(rich_factor))
     
     eg_df_$Description <- factor(
         x = eg_df_$Description, 
@@ -149,7 +156,7 @@ tair_enrichGO <- function(
     
     eg_dotplot_ <- ggplot(
         data = eg_df_, 
-        mapping = aes(Description, GeneRatio, color = p.adjust, size = fold.enrich, shape = ONTOLOGY)
+        mapping = aes(Description, GeneRatio, color = p.adjust, size = fold_enrich, shape = ONTOLOGY)
     ) +
         geom_point() +
         theme_bw() +

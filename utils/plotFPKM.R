@@ -17,7 +17,7 @@ plotFPKM <- function(dds, gene_id, intgroup, returnData = FALSE){
         dplyr::select(all_of(c(gene_id_str, intgroup)))
     
     fpkm_mat$intgroup <- fpkm_mat %>% 
-        dplyr::select(intgroup) %>% 
+        dplyr::select(all_of(intgroup)) %>% 
         apply(., 1, function(x) paste(x, collapse = "_"))
     
     if (returnData){
@@ -35,3 +35,13 @@ plotFPKM <- function(dds, gene_id, intgroup, returnData = FALSE){
     }
 }
 
+
+dds_results <- function(dds, alpha = 0.05, pAdjustMethod = "BH", ...){
+    DESeq2::results(
+    object = dds,
+    alpha = alpha,
+    pAdjustMethod = pAdjustMethod,
+    ...
+) %>% 
+    as.data.frame()
+}
