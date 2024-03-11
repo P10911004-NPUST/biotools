@@ -24,3 +24,21 @@ count2tpm <- function(count_mat, gene_length){
     
     return(tpm_mat)
 }
+
+
+fpkm2tpm <- function(fpkm_mat){
+    tpm_mat <- t(t(fpkm_mat) / colSums(fpkm_mat)) * 1e6
+    return(tpm_mat)
+}
+
+
+tpm2fpkm <- function(tpm_mat){
+    next
+}
+    
+    
+    
+    
+    
+    
+    

@@ -4,7 +4,7 @@ load_packages(BiocGenerics, GenomicRanges, GenomicFeatures, TxDb.Athaliana.BioMa
 get_intergenic <- function(
         fasta_dir = "D:/bcst/YAMADA/jklai/Araport11/Araport11_intergenic_20220504.fa",
         output_gtf = TRUE,
-        output_dir = "./Araport11_intergenic.gtf"
+        output_dir = NULL
 ){
     fa <- readLines(fasta_dir)
     fa <- fa[unlist(gregexpr(">", fa)) == 1]
@@ -23,10 +23,10 @@ get_intergenic <- function(
     
     res <- df0 %>% 
         mutate(across(c(start, end), as.numeric)) %>% 
-        mutate(attribute = paste0("\"", attribute, "\"")) %>% 
-        mutate(attribute = paste0("transcript_id ", attribute, "; gene_id ", attribute, ";"))
+        # mutate(attribute = paste0("\"", attribute, "\"")) %>% 
+        mutate(attribute = paste0("transcript_id \"", attribute, "\"; gene_id \"", attribute, "\";"))
     
-    if (output_gtf){
+    if (output_gtf & !is.null(output_dir)){
         write.table(res, file = output_dir, row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
     }else{
         return(res)
