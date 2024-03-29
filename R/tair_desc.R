@@ -128,12 +128,13 @@ tair_enrichGO <- function(
             bg_ratio = parse_eval(BgRatio),
             rich_factor = Count / as.numeric(sub("/\\d+", "", BgRatio)),
             fold_enrich = gene_ratio / bg_ratio
-        ) %>% 
+        ) |> 
         # dplyr::mutate_at(vars(GeneRatio, BgRatio), parse_eval) %>% 
-        tidyr::drop_na() %>% 
+        tidyr::drop_na() |> 
         # dplyr::mutate(fold.enrich = as.numeric(GeneRatio) / as.numeric(BgRatio)) %>% 
         # arrange(desc(GeneRatio))
-        arrange(desc(rich_factor))
+        dplyr::relocate(geneID, .after = last_col()) |> 
+        dplyr::arrange(desc(rich_factor))
     
     eg_df_$Description <- factor(
         x = eg_df_$Description, 
@@ -142,21 +143,12 @@ tair_enrichGO <- function(
     
     if (!"ONTOLOGY" %in% colnames(eg_df_)) eg_df_$ONTOLOGY <- rep(ontology, nrow(eg_df_))
     
-    if (nrow(eg_df_) > showCategory) eg_df_ <- eg_df_[1:showCategory, ]
-    # eg@result$fold.enrich <- eg_df$fold.enrich
-    # 
-    # eg_dotplot <- clusterProfiler::dotplot(
-    #     object = eg,
-    #     title = "DEGs",
-    #     showCategory = 10,
-    #     x = "GeneRatio",
-    #     size = "fold.enrich",
-    #     orderBy = "x"
-    # )
+    eg_dotplot_ <- eg_df_
+    if (nrow(eg_df_) > showCategory) eg_dotplot_ <- eg_df_[1:showCategory, ]
     
     eg_dotplot_ <- ggplot(
-        data = eg_df_, 
-        mapping = aes(Description, GeneRatio, color = p.adjust, size = fold_enrich, shape = ONTOLOGY)
+        data = eg_dotplot_, 
+        mapping = aes(Description, gene_ratio, color = p.adjust, size = fold_enrich, shape = ONTOLOGY)
     ) +
         geom_point() +
         theme_bw() +

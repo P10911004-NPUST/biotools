@@ -1,3 +1,18 @@
+PLATZ_family <- c(
+    AIN1 = "AT1G21000",  # PLATZ1
+    PLATZ2 = "AT1G76590",  # PLATZ2
+    ORE15 = "AT1G31040",  #PLATZ3
+    a = "AT2G01818",
+    d = "AT2G27930",
+    e = "AT5G46710",
+    RITF1 = "AT2G12646",  #PLATZ7
+    g = "AT1G32700",
+    PLATZ9 = "AT3G50808",
+    PLATZ10 = "AT3G60670",  # PLATZ10
+    PLATZ11 = "AT4G17900",  # PLATZ11
+    h = "AT1G43000"
+)
+
 PLT_genes <- c(
     PLT1 = "AT3G20840",
     PLT2 = "AT1G51190",
