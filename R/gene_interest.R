@@ -10,7 +10,7 @@ PLATZ_family <- c(
     PLATZ9 = "AT3G50808",
     PLATZ10 = "AT3G60670",  # PLATZ10
     PLATZ11 = "AT4G17900",  # PLATZ11
-    PLATZ12 = "AT5G46710",
+    PLATZ12 = "AT5G46710"
 )
 
 PLT_genes <- c(
