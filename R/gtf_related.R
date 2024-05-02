@@ -8,10 +8,12 @@ suppressMessages({
 })
 
 
+gtf_colnames <- c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attributes")
+
 read_gtf <- function(gtf_file){
     gtf <- read_tsv(gtf_file, comment = "#", col_names = FALSE, show_col_types = FALSE) %>% 
         mutate_all(as.character)
-    colnames(gtf) <- c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attributes")
+    colnames(gtf) <- gtf_colnames
     return(gtf)
 }
 
@@ -44,19 +46,18 @@ extract_attribute_feature <- function(x, feature_name = NULL){
 
 gff2gtf <- function(gff_file){
     
-    col_names <- c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attributes")
-    
     if (inherits(gff_file, "character")){
         gff_file <- read_tsv(gff_file, comment = "#", col_names = FALSE, show_col_types = FALSE)
     }
     
-    if (identical(colnames(gff_file), col_names)){
-        colnames(gff_file) <- col_names
+    if (identical(colnames(gff_file), gtf_colnames)){
+        colnames(gff_file) <- gtf_colnames
     }
     
     gff <- gff_file %>% 
         mutate(attributes = str_replace_all(attributes, "=", " \"")) %>% 
-        mutate(attributes = str_replace_all(attributes, ";", "\"; "))
+        mutate(attributes = str_replace_all(attributes, ";", "\"; ")) %>% 
+        mutate(attributes = paste0(attributes, "\";"))
     
     return(gff)
 }
