@@ -3,11 +3,14 @@ suppressMessages({
     library(readr)
     if (!require(stringr)) install.packages("stringr")
     library(stringr)
+    if (!require(dplyr)) install.packages("dplyr")
+    library(dplyr)
 })
 
 
 read_gtf <- function(gtf_file){
-    gtf <- read_tsv(gtf_file, comment = "#", col_names = FALSE, show_col_types = FALSE)
+    gtf <- read_tsv(gtf_file, comment = "#", col_names = FALSE, show_col_types = FALSE) %>% 
+        mutate_all(as.character)
     colnames(gtf) <- c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attributes")
     return(gtf)
 }
