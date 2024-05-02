@@ -1,3 +1,20 @@
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.bmp
+
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.doc
+*.docx
+*.csv
+
+pyenv/
+venv/
+
 # History files
 .Rhistory
 .Rapp.history
