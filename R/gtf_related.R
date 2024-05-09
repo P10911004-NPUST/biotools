@@ -5,6 +5,7 @@ suppressMessages({
     library(stringr)
     if (!require(dplyr)) install.packages("dplyr")
     library(dplyr)
+    # options(scipen = 100)
 })
 
 
@@ -13,12 +14,9 @@ gtf_colnames <- c("seqname", "source", "feature", "start", "end", "score", "stra
 read_gtf <- function(gtf_file){
     gtf <- read_tsv(gtf_file, comment = "#", col_names = FALSE, show_col_types = FALSE)
     colnames(gtf) <- gtf_colnames
-    gtf <- gtf %>% 
-        mutate(
-            start = format(start, scientific = FALSE),
-            end = format(end, scientific = FALSE)
-        ) %>% 
-        mutate_all(as.character)
+    gtf$start <- as.numeric(format(gtf$start, scientific = FALSE))
+    gtf$end <- as.numeric(format(gtf$end, scientific = FALSE))
+    gtf$attributes <- as.character(gtf$attributes)
     return(gtf)
 }
 
