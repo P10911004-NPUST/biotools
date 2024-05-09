@@ -17,7 +17,8 @@ read_gtf <- function(gtf_file){
         mutate(
             start = format(start, scientific = FALSE),
             end = format(end, scientific = FALSE)
-        )
+        ) %>% 
+        mutate_all(as.character)
     return(gtf)
 }
 
