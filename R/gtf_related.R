@@ -11,9 +11,13 @@ suppressMessages({
 gtf_colnames <- c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attributes")
 
 read_gtf <- function(gtf_file){
-    gtf <- read_tsv(gtf_file, comment = "#", col_names = FALSE, show_col_types = FALSE) %>% 
-        mutate_all(as.character)
+    gtf <- read_tsv(gtf_file, comment = "#", col_names = FALSE, show_col_types = FALSE)
     colnames(gtf) <- gtf_colnames
+    gtf <- gtf %>% 
+        mutate(
+            start = format(start, scientific = FALSE),
+            end = format(end, scientific = FALSE)
+        )
     return(gtf)
 }
 
