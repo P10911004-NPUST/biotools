@@ -17,6 +17,7 @@ read_assign <- function(x){
 read_sqanti <- function(x){
     df0 <- readr::read_tsv(
         file = x,
+        comment = "#",
         col_names = TRUE,
         show_col_types = FALSE
     )
