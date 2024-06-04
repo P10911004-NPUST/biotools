@@ -101,47 +101,50 @@ go_desc <- function(go_id){
 # ---- Retrieve GO data based on TAIR GeneID -----------------------------------------
 tair_enrichGO <- function(
         tair_id, 
-        universe_tair_id,
-        ontology = "ALL",
+        universe_tair_id = NULL,
+        ontology = c("ALL", "BP", "CC", "MF"),
         showCategory = 10,
         returnData = FALSE,
-        asSymbol = FALSE
+        asSymbol = FALSE,
+        simplify = TRUE
 ){
     eg_ <- clusterProfiler::enrichGO(
         gene = tair_id,
         universe = universe_tair_id,
         OrgDb = org.At.tair.db,
         keyType = "TAIR",
-        ont = ontology,  # c("ALL", "BP", "CC", "MF")
-        qvalueCutoff = 0.2,  # default: 0.2
-        pvalueCutoff = 0.05,  # default: 0.05
+        ont = match.arg(ontology),  # c("ALL", "BP", "CC", "MF")
+        qvalueCutoff = 0.05,  # default: 0.2
+        pvalueCutoff = 0.01,  # default: 0.05
         pAdjustMethod = "BH",  # default: "BH"
         readable = asSymbol,  # TRUE: show Gene Symbol, FALSE: show TAIR_id
         pool = FALSE  # FALSE: Show ontology separately
-    ) %>% 
-        clusterProfiler::simplify()
+    )
+    
+    if (simplify) eg_ <- eg_ %>% clusterProfiler::simplify()
     
     eg_df_ <- as.data.frame(eg_@result) %>% 
-        tidyr::drop_na() %>% 
+        tidyr::drop_na()
+    
+    if (!"ONTOLOGY" %in% colnames(eg_df_)) eg_df_$ONTOLOGY <- rep(ontology, nrow(eg_df_))
+    
+    eg_df_ <- eg_df_ %>% 
         dplyr::mutate(
             gene_ratio = parse_eval(GeneRatio),
             bg_ratio = parse_eval(BgRatio),
             rich_factor = Count / as.numeric(sub("/\\d+", "", BgRatio)),
             fold_enrich = gene_ratio / bg_ratio
-        ) |> 
-        # dplyr::mutate_at(vars(GeneRatio, BgRatio), parse_eval) %>% 
-        tidyr::drop_na() |> 
-        # dplyr::mutate(fold.enrich = as.numeric(GeneRatio) / as.numeric(BgRatio)) %>% 
-        # arrange(desc(GeneRatio))
-        dplyr::relocate(geneID, .after = last_col()) |> 
-        dplyr::arrange(desc(rich_factor))
+        ) %>% 
+        tidyr::drop_na() %>% 
+        dplyr::relocate(geneID, .after = last_col()) %>% 
+        group_by(ONTOLOGY) %>% 
+        dplyr::arrange(ONTOLOGY, desc(rich_factor)) %>% 
+        ungroup()
     
     eg_df_$Description <- factor(
         x = eg_df_$Description, 
         levels = eg_df_ %>% dplyr::arrange(GeneRatio) %>% .$Description
     )
-    
-    if (!"ONTOLOGY" %in% colnames(eg_df_)) eg_df_$ONTOLOGY <- rep(ontology, nrow(eg_df_))
     
     eg_dotplot_ <- eg_df_
     if (nrow(eg_df_) > showCategory) eg_dotplot_ <- eg_df_[1:showCategory, ]
