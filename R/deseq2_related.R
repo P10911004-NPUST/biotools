@@ -24,13 +24,13 @@ get_result <- function(
         object = NULL,
         contrast = NULL,
         pvalueCutoff = 0.05,
-        lfcCutOff = 0
+        lfcCutOff = 0,
+        entrez_id = FALSE
 ){
     res <- DESeq2::results(
         object = object,
         contrast = contrast,
-        alpha = pvalueCutoff,
-        entrez_id = FALSE
+        alpha = pvalueCutoff
     ) %>% 
         as.data.frame() %>% 
         tidyr::drop_na() %>%
