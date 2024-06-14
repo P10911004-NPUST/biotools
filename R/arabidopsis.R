@@ -39,6 +39,27 @@ tair2entrez <- function(tair_id, output_data_types = c("vector", "list", "data.f
     if (data_type == "data.frame") return(df0)
 }
 
+entrez2tair <- function(entrez_id, output_data_types = c("vector", "list", "data.frame")){
+    data_type <- match.arg(output_data_types)
+    
+    df0 <- clusterProfiler::bitr(
+        geneID = entrez_id,
+        OrgDb = org.At.tair.db,
+        fromType = "ENTREZID",
+        toType = "TAIR",
+        drop = FALSE
+    )
+    
+    # Output a vector
+    if (data_type == "vector") return(df0 %>% dplyr::pull(TAIR, ENTREZID))
+    
+    # Output a list
+    if (data_type == "vector") return(as.list(df0))
+    
+    # Output a data frame
+    if (data_type == "data.frame") return(df0)
+}
+
 
 # ==== Over Representation Analysis (ORA) ====
 tair_enrichGO <- function(
@@ -46,8 +67,11 @@ tair_enrichGO <- function(
         ontology = c("ALL", "BP", "CC", "MF"), 
         qvalueCutoff = 0.05,  # default: 0.2
         pvalueCutoff = 0.01,  # default: 0.05
-        simplify = TRUE
+        simplify = TRUE,
+        return_as_dataframe = TRUE
 ){
+    df0 <- "NA"
+    
     res <- clusterProfiler::enrichGO(
         gene = gene_id,
         # universe = universe_tair_id,
@@ -57,15 +81,23 @@ tair_enrichGO <- function(
         qvalueCutoff = qvalueCutoff,  # default: 0.2
         pvalueCutoff = pvalueCutoff,  # default: 0.05
         pAdjustMethod = "BH",  # default: "BH"
-        # readable = asSymbol,  # TRUE: show Gene Symbol, FALSE: show TAIR_id
+        readable = FALSE,  # TRUE: show Gene Symbol, FALSE: show TAIR_id
         pool = FALSE  # FALSE: Show ontology separately
     )
     
-    if (nrow(res) < 1) return(NULL)
+    if (nrow(res@result > 0)){
+        if (simplify) res <- res %>% clusterProfiler::simplify()
+        
+        df0 <- res@result %>% 
+            mutate(
+                bg_ratio = Count / as.numeric(str_split_i(BgRatio, "/", 2)),
+                gene_ratio = Count / as.numeric(str_split_i(GeneRatio, "/", 2)),
+                fold_enrich = gene_ratio / bg_ratio,
+                rich_factor = Count / as.numeric(sub("/\\d+", "", BgRatio)),
+            )
+    }
     
-    if (simplify) res %>% clusterProfiler::simplify()
-    
-    return(as.data.frame(res))
+    ifelse(return_as_dataframe, return(df0), return(res))
 }
 
 
@@ -122,4 +154,58 @@ tair_gseKEGG <- function(
     )
     
     return(res@result)
+}
+
+
+# ==== Compare cluster ====
+tair_compare_cluster <- function(
+        gene_named_list, 
+        data = NULL,
+        apply_method = c("ora", "gsea", "kegg"), 
+        qvalueCutoff = 0.05,  # default: 0.2
+        pvalueCutoff = 0.01,  # default: 0.05
+        minGSSize = 5,
+        maxGSSize = 500,
+        eps = 0,
+        simplify = TRUE
+){
+    apply_method <- match.arg(apply_method)
+    
+    if (tolower(apply_method) == "ora"){
+        res <- clusterProfiler::compareCluster(
+            geneClusters = entrez_id ~ group,
+            OrgDb = org.At.tair.db,
+            fun = enrichGO,
+            data = cluster_df
+        )
+    }
+    
+    if (tolower(apply_method) == "gsea"){
+        res <- clusterProfiler::gseGO(
+            geneList = gene_named_list,
+            OrgDb = org.At.tair.db,
+            keyType = "ENTREZID",
+            ont = "ALL",
+            minGSSize = minGSSize,
+            maxGSSize = maxGSSize,
+            pvalueCutoff = pvalueCutoff,  # set to 1 in order to obtain all possible terms 
+            pAdjustMethod = "BH",
+            eps = eps,
+            verbose = FALSE,  # FALSE: Show ontology separately
+            seed = TRUE
+        )
+    }
+    
+    if (tolower(apply_method) == "kegg"){
+        res <- NULL
+        print("Not yet")
+    }
+    
+    if (nrow(res) < 1) return(NULL)
+    
+    if (simplify) res %>% clusterProfiler::simplify()
+    
+    res <- as.data.frame(res)
+    
+    return(res)
 }
