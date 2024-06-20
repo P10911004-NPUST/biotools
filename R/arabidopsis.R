@@ -65,8 +65,8 @@ entrez2tair <- function(entrez_id, output_data_types = c("vector", "list", "data
 tair_enrichGO <- function(
         gene_id, 
         ontology = c("ALL", "BP", "CC", "MF"), 
-        qvalueCutoff = 0.05,  # default: 0.2
-        pvalueCutoff = 0.01,  # default: 0.05
+        qvalueCutoff = 0.05,  # default: 0.2       # consider using 0.05
+        pvalueCutoff = 0.01,  # default: 0.05     # consider using 0.01
         simplify = TRUE,
         return_as_dataframe = TRUE
 ){
@@ -89,12 +89,13 @@ tair_enrichGO <- function(
         if (simplify) res <- res %>% clusterProfiler::simplify()
         
         df0 <- res@result %>% 
-            mutate(
+            dplyr::mutate(
                 bg_ratio = Count / as.numeric(str_split_i(BgRatio, "/", 2)),
                 gene_ratio = Count / as.numeric(str_split_i(GeneRatio, "/", 2)),
                 fold_enrich = gene_ratio / bg_ratio,
                 rich_factor = Count / as.numeric(sub("/\\d+", "", BgRatio)),
-            )
+            ) %>% 
+            dplyr::arrange(ONTOLOGY, desc(rich_factor))
     }
     
     ifelse(return_as_dataframe, return(df0), return(res))
@@ -209,3 +210,113 @@ tair_compare_cluster <- function(
     
     return(res)
 }
+
+
+# GO dotplot ====
+go_dotplot <- function(
+        data, 
+        x, 
+        y, 
+        group_var = NULL, 
+        size_var, 
+        color_var,
+        shape_var = NULL,
+        text_wrap = 25
+){
+    x <- deparse(substitute(x))
+    y <- deparse(substitute(y))
+    group_var <- deparse(substitute(group_var))
+    size_var <- deparse(substitute(size_var))
+    color_var <- deparse(substitute(color_var))
+    shape_var <- deparse(substitute(shape_var))
+    
+    df0 <- data.frame(
+        x = data[[x]],
+        y = data[[y]],
+        size_var = data[[size_var]],
+        color_var = data[[color_var]]
+    )
+    
+    p1 <- ggplot(
+        data = df0, 
+        mapping = aes(
+            x = x, 
+            y = fct_reorder(y, x)
+        )
+    ) +
+        theme_bw() +
+        labs(
+            x = sym(x),
+            y = sym(y),
+            size = sym(size_var),
+            color = sym(color_var),
+        ) +
+        geom_point(aes(size = size_var, color = color_var)) +
+        geom_segment(
+            mapping = aes(xend = 0, yend = y, color = color_var, linewidth = size_var), 
+            show.legend = FALSE
+        ) +
+        scale_y_discrete(labels = function(x) str_wrap(x, text_wrap)) +
+        scale_color_gradientn(
+            colours = c("#a8dadc", "#457b9d", "#1d3557"),
+            trans = "log10",
+            guide = guide_colorbar(
+                reverse = TRUE,
+                order = 1,
+                theme = theme(
+                    legend.key.size = grid::unit(1, "cm")
+                )
+            ),
+        ) +
+        scale_size_continuous(
+            range = c(5, 12),
+            guide = guide_legend(
+                order = 2,
+                theme = theme(
+                    legend.key.size = grid::unit(0.7, "cm")
+                )
+            )
+        ) +
+        scale_shape(
+            guide = guide_legend(
+                order = 3,
+                override.aes = list(size = 5)
+            )
+        ) +
+        theme(
+            text = element_text(family = "sans", face = "bold", size = 18),
+            axis.title.x = element_markdown(margin = ggplot2::margin(t = 9)),
+            axis.text.x.bottom = element_text(size = 18, vjust = 0.5, angle = 0),
+            axis.title.y = element_blank(),
+            axis.text.y = element_text(family = "sans", face = "bold", size = 18),
+            legend.title = element_markdown(family = "sans", face = "bold", size = 15),
+            legend.text = element_text(family = "sans", face = "plain", size = 14),
+            legend.background = element_blank(),
+            legend.position = "right"
+        )
+    
+    if (group_var != "NULL"){
+        p1$data$group_var <- data[[group_var]]
+        p1 <- p1 +
+            facet_wrap(~ group_var, nrow = 1, scales = "free")
+    }
+    
+    if (shape_var != "NULL"){
+        p1$layers[[1]] <- NULL
+        p1$data$shape_var <- data[[shape_var]]
+        p1 <- p1 +
+            geom_point(aes(size = size_var, color = color_var, shape = shape_var)) +
+            labs(
+                x = sym(x),
+                y = sym(y),
+                size = sym(size_var),
+                color = sym(color_var),
+                shape = sym(shape_var)
+            )
+    }
+    
+    return(p1)
+}
+
+# go_dotplot(df0_up_set1, rich_factor, Description, gene_ratio, p.adjust)
+

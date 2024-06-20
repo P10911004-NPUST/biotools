@@ -23,26 +23,49 @@ get_norm_count <- function(dds_object, returnData = TRUE, ...){
 get_result <- function(
         object = NULL,
         contrast = NULL,
+        name = NULL,
         pvalueCutoff = 0.05,
         lfcCutOff = 0,
         entrez_id = FALSE
 ){
-    res <- DESeq2::results(
-        object = object,
-        contrast = contrast,
-        alpha = pvalueCutoff
-    ) %>% 
-        as.data.frame() %>% 
-        tidyr::drop_na() %>%
-        tibble::rownames_to_column("gene_id") %>%
-        dplyr::filter(padj < pvalueCutoff) %>% 
-        dplyr::mutate(
-            reg_pos = case_when(
-                log2FoldChange > abs(lfcCutOff) ~ "up",
-                log2FoldChange < -abs(lfcCutOff) ~ "down",
-            )
-        ) %>%
-        tidyr::drop_na()
+    if (deparse(substitute(contrast)) != "NULL"){
+        res <- DESeq2::results(
+            object = object,
+            contrast = contrast,
+            alpha = pvalueCutoff
+        ) %>% 
+            as.data.frame() %>% 
+            tidyr::drop_na() %>%
+            tibble::rownames_to_column("gene_id") %>%
+            dplyr::filter(padj < pvalueCutoff) %>% 
+            dplyr::mutate(
+                reg_pos = case_when(
+                    log2FoldChange > abs(lfcCutOff) ~ "up",
+                    log2FoldChange < -abs(lfcCutOff) ~ "down",
+                )
+            ) %>%
+            tidyr::drop_na()
+    }
+    
+    if (deparse(substitute(name)) != "NULL"){
+        res <- DESeq2::results(
+            object = object,
+            name = name,
+            alpha = pvalueCutoff
+        ) %>% 
+            as.data.frame() %>% 
+            tidyr::drop_na() %>%
+            tibble::rownames_to_column("gene_id") %>%
+            dplyr::filter(padj < pvalueCutoff) %>% 
+            dplyr::mutate(
+                reg_pos = case_when(
+                    log2FoldChange > abs(lfcCutOff) ~ "up",
+                    log2FoldChange < -abs(lfcCutOff) ~ "down",
+                )
+            ) %>%
+            tidyr::drop_na()
+    }
+    
     
     if (entrez_id) res <- res %>% dplyr::mutate(entrez_id = tair2entrez(gene_id))
     
