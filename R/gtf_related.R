@@ -1,18 +1,14 @@
 suppressMessages({
     if (!require(readr)) install.packages("readr")
-    library(readr)
     if (!require(stringr)) install.packages("stringr")
-    library(stringr)
     if (!require(dplyr)) install.packages("dplyr")
-    library(dplyr)
-    # options(scipen = 100)
 })
 
 
 gtf_colnames <- c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attributes")
 
 read_gtf <- function(gtf_file){
-    gtf <- read_tsv(gtf_file, comment = "#", col_names = FALSE, show_col_types = FALSE)
+    gtf <- readr::read_tsv(gtf_file, comment = "#", col_names = FALSE, show_col_types = FALSE)
     colnames(gtf) <- gtf_colnames
     gtf$start <- as.numeric(format(gtf$start, scientific = FALSE))
     gtf$end <- as.numeric(format(gtf$end, scientific = FALSE))
@@ -22,8 +18,7 @@ read_gtf <- function(gtf_file){
 
 
 write_gtf <- function(x, file){
-    write_tsv(x, file, col_names = FALSE, quote = "none", escape = "none")
-    
+    readr::write_tsv(x, file, col_names = FALSE, quote = "none", escape = "none")
 }
 
 
@@ -50,7 +45,7 @@ extract_attribute_feature <- function(x, feature_name = NULL){
 gff2gtf <- function(gff_file){
     
     if (inherits(gff_file, "character")){
-        gff_file <- read_tsv(gff_file, comment = "#", col_names = FALSE, show_col_types = FALSE)
+        gff_file <- readr::read_tsv(gff_file, comment = "#", col_names = FALSE, show_col_types = FALSE)
     }
     
     if (identical(colnames(gff_file), gtf_colnames)){
@@ -58,9 +53,9 @@ gff2gtf <- function(gff_file){
     }
     
     gff <- gff_file %>% 
-        mutate(attributes = str_replace_all(attributes, "=", " \"")) %>% 
-        mutate(attributes = str_replace_all(attributes, ";", "\"; ")) %>% 
-        mutate(attributes = paste0(attributes, "\";"))
+        dplyr::mutate(attributes = stringr::str_replace_all(attributes, "=", " \"")) %>% 
+        dplyr::mutate(attributes = stringr::str_replace_all(attributes, ";", "\"; ")) %>% 
+        dplyr::mutate(attributes = paste0(attributes, "\";"))
     
     return(gff)
 }

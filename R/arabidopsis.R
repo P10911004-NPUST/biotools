@@ -1,7 +1,7 @@
 suppressMessages({
-    if (!require(dplyr)) BiocManager::install("dplyr")
-    if (!require(magrittr)) BiocManager::install("magrittr")
-    if (!require(BiocManager)) BiocManager::install("BiocManager")
+    if (!require(dplyr)) install.packages("dplyr")
+    if (!require(magrittr)) install.packages("magrittr")
+    if (!require(BiocManager)) install.packages("BiocManager")
     if (!require(GO.db)) BiocManager::install("GO.db")
     if (!require(org.At.tair.db)) BiocManager::install("org.At.tair.db")
     if (!require(AnnotationDbi)) BiocManager::install("AnnotationDbi")
@@ -14,6 +14,13 @@ suppressMessages({
     library(org.At.tair.db)
     library(AnnotationDbi)
     library(clusterProfiler)
+    
+    windowsFonts(
+        palatino = windowsFont("Palatino Linotype"),
+        times = windowsFont("Times New Roman"),
+        arial = windowsFont("Arial")
+    )
+    
     # options(scipen = 100)  # large value will prevent scientific notation
 })
 
@@ -65,10 +72,11 @@ entrez2tair <- function(entrez_id, output_data_types = c("vector", "list", "data
 tair_enrichGO <- function(
         gene_id, 
         ontology = c("ALL", "BP", "CC", "MF"), 
-        qvalueCutoff = 0.05,  # default: 0.2       # consider using 0.05
-        pvalueCutoff = 0.01,  # default: 0.05     # consider using 0.01
+        qvalueCutoff = 0.2,  # default: 0.2       # consider using 0.05
+        pvalueCutoff = 0.05,  # default: 0.05     # consider using 0.01
         simplify = TRUE,
-        return_as_dataframe = TRUE
+        return_as_dataframe = TRUE,
+        ...
 ){
     df0 <- "NA"
     
@@ -82,7 +90,8 @@ tair_enrichGO <- function(
         pvalueCutoff = pvalueCutoff,  # default: 0.05
         pAdjustMethod = "BH",  # default: "BH"
         readable = FALSE,  # TRUE: show Gene Symbol, FALSE: show TAIR_id
-        pool = FALSE  # FALSE: Show ontology separately
+        pool = FALSE,  # FALSE: Show ontology separately
+        ...
     )
     
     if (nrow(res@result > 0)){
@@ -221,7 +230,9 @@ go_dotplot <- function(
         size_var, 
         color_var,
         shape_var = NULL,
-        text_wrap = 25
+        text_wrap = 25,
+        text_size = 22,
+        legend_text_size = 20
 ){
     x <- deparse(substitute(x))
     y <- deparse(substitute(y))
@@ -284,13 +295,13 @@ go_dotplot <- function(
             )
         ) +
         theme(
-            text = element_text(family = "sans", face = "bold", size = 18),
-            axis.title.x = element_markdown(margin = ggplot2::margin(t = 9)),
-            axis.text.x.bottom = element_text(size = 18, vjust = 0.5, angle = 0),
+            text = element_text(family = "arial", face = "bold", size = text_size),
+            axis.title.x = element_markdown(margin = ggplot2::margin(t = 7)),
+            axis.text.x.bottom = element_text(size = text_size),
             axis.title.y = element_blank(),
-            axis.text.y = element_text(family = "sans", face = "bold", size = 18),
-            legend.title = element_markdown(family = "sans", face = "bold", size = 15),
-            legend.text = element_text(family = "sans", face = "plain", size = 14),
+            axis.text.y = element_text(family = "arial", face = "bold", size = text_size),
+            legend.title = element_markdown(family = "arial", face = "bold", size = legend_text_size),
+            legend.text = element_text(family = "arial", face = "plain", size = legend_text_size - 1),
             legend.background = element_blank(),
             legend.position = "right"
         )

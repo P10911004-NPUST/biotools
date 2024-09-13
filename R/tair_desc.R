@@ -136,7 +136,8 @@ tair_enrichGO <- function(
             fold_enrich = gene_ratio / bg_ratio
         ) %>% 
         tidyr::drop_na() %>% 
-        dplyr::relocate(geneID, .after = last_col()) %>% 
+        dplyr::relocate(ID, .after = last_col()) %>% 
+        dplyr::relocate(geneID, .after = ONTOLOGY) %>% 
         group_by(ONTOLOGY) %>% 
         dplyr::arrange(ONTOLOGY, desc(rich_factor)) %>% 
         ungroup()
