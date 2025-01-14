@@ -1,7 +1,10 @@
 suppressMessages({
     if (!require(dplyr)) install.packages("dplyr")
+    if (!require(ggplot2)) install.packages("ggplot2")
     if (!require(magrittr)) install.packages("magrittr")
     if (!require(BiocManager)) install.packages("BiocManager")
+    if (!require(ggvenn)) install.packages("ggvenn")
+    if (!require(ggtext)) install.packages("ggtext")
     if (!require(GO.db)) BiocManager::install("GO.db")
     if (!require(org.At.tair.db)) BiocManager::install("org.At.tair.db")
     if (!require(AnnotationDbi)) BiocManager::install("AnnotationDbi")
@@ -330,4 +333,112 @@ go_dotplot <- function(
 }
 
 # go_dotplot(df0_up_set1, rich_factor, Description, gene_ratio, p.adjust)
+
+
+
+# Venn plot ====
+venn_label_position <- list(
+    x = c(
+        "A" = -0.85, "B" = 0, "C" = 0.85, 
+        "D" = -1.1, "E" = 1.1, 
+        "F" = -1.5, "G" = 1.5, 
+        "H" = -0.5, "I" = 0.5, 
+        "J" = -0.85, "K" = 0, "L" = 0.85, 
+        "M" = -0.35, "N" = 0.35, "O" = 0
+    ),
+    # A     B     C     D     E     F     G     
+    y = c(
+        "A" = 0.95, "B" = 0.65, "C" = 0.95, 
+        "D" = 0.55, "E" = 0.55, 
+        "F" = 0.40, "G" = 0.40, 
+        "H" = 0.10, "I" = 0.10, 
+        "J" = -0.60, "K" = -0.45, "L" = -0.60, 
+        "M" = -0.90, "N" = -0.90, "O" = -1.17
+    )
+)
+
+ggvenn4 <- function(
+        data = list(), 
+        
+        show_set_names = TRUE,
+        set_names = c(),
+        set_names_text_size = 6,
+        
+        show_labels = TRUE,
+        label_text_size = 5,
+        
+        text_size = 5,
+        stroke_size = NA,
+        ...
+){
+    v1 <- data[[1]]
+    v2 <- data[[2]]
+    v3 <- data[[3]]
+    v4 <- data[[4]]
+    # layer 1 = polygon
+    # layer 2 = polygon stroke
+    # layer 3 = set names
+    # layer 4 = set data
+    set_elements <- list(
+        set_A = v2 %>% setdiff(v3) %>% setdiff(v1) %>% setdiff(v4),
+        set_B = v2 %>% intersect(v3) %>% setdiff(v1) %>% setdiff(v4),
+        set_C = v3 %>% setdiff(v2) %>% setdiff(v1) %>% setdiff(v4),
+        set_D = v2 %>% intersect(v1) %>% setdiff(v3) %>% setdiff(v4),
+        set_E = v3 %>% intersect(v4) %>% setdiff(v2) %>% setdiff(v1),
+        set_F = v1 %>% setdiff(v2) %>% setdiff(v3) %>% setdiff(v4),
+        set_G = v4 %>% setdiff(v3) %>% setdiff(v2) %>% setdiff(v1),
+        set_H = v1 %>% intersect(v2) %>% intersect(v3) %>% setdiff(v4),
+        set_I = v2 %>% intersect(v3) %>% intersect(v4) %>% setdiff(v1),
+        set_J = v1 %>% intersect(v3) %>% setdiff(v2) %>% setdiff(v4),
+        set_K = v1 %>% intersect(v2) %>% intersect(v3) %>% intersect(v4),
+        set_L = v4 %>% intersect(v2) %>% setdiff(v3) %>% setdiff(v1),
+        set_M = v1 %>% intersect(v4) %>% intersect(v3) %>% setdiff(v2),
+        set_N = v4 %>% intersect(v2) %>% intersect(v1) %>% setdiff(v3),
+        set_O = v1 %>% intersect(v4) %>% setdiff(v2) %>% setdiff(v3)
+    )
+    
+    p0 <- ggvenn(
+        data = data,
+        text_size = text_size,
+        stroke_size = stroke_size,
+        ...
+    ) +
+        theme(
+            plot.title = element_blank(),
+            plot.subtitle = element_blank(),
+            text = element_text(size = 22, face = "bold", family = "sans")
+        )
+    
+    p0[["layers"]][[3]] <- NULL
+    
+    if (show_set_names){
+        if (length(set_names) == 0) set_names <- names(data)
+        p0 <- p0 +
+            annotate(
+                geom = "richtext",
+                x = c(-1.5, -1, 1, 1.5),
+                y = c(-1, 1.2, 1.2, -1),
+                label = set_names,
+                size = set_names_text_size,
+                fontface = "bold",
+                angle = c(310, 0, 0, 50),
+                fill = NA,
+                label.color = NA
+            )
+    }
+    
+    if (show_labels){
+        p0 <- p0 +
+            annotate(
+                geom = "text",
+                x = venn_label_position$x,
+                y = venn_label_position$y,
+                label = LETTERS[1:length(venn_label_position$x)],
+                size = label_text_size,
+                fontface = "bold"
+            )
+    }
+    
+    return(list(figure = p0, set_elements = set_elements))
+}
 

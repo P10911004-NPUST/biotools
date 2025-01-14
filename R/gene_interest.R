@@ -49,8 +49,8 @@ RITF_genes <- c(
 
 
 SOD_genes <- c(
-    CSD1 = "AT1G08830",
-    CSD2 = "AT2G28190",
+    CSD1 = "AT1G08830",  # SOD1
+    CSD2 = "AT2G28190",  # SOD2
     CSD3 = "AT5G18100",
     FSD1 = "AT4G25100",
     FSD2 = "AT5G51100",
@@ -58,5 +58,14 @@ SOD_genes <- c(
     MSD1 = "AT3G10920",
     MSD2 = "AT3G56350",
     NULL_01 = "AT4G00651",
-    NULL_02 = "AT4G15562"
+    NULL_02 = "AT4G15562",
+    CCS = "AT1G12520",  # COPPER CHAPERONE FOR SOD1
+    MIR398C = "AT5G14565"  # micro RNA 398C
 )
+
+
+
+
+
+
+
