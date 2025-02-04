@@ -10,6 +10,8 @@ suppressMessages({
     if (!require(AnnotationDbi)) BiocManager::install("AnnotationDbi")
     if (!require(clusterProfiler)) BiocManager::install("clusterProfiler")
     if (!require(biomartr)) BiocManager::install("biomartr")
+    if (!require(KEGGREST)) BiocManager::install("KEGGREST")
+    if (!require(pathview)) BiocManager::install("pathview")
     
     library(dplyr)
     library(magrittr)
@@ -68,6 +70,36 @@ entrez2tair <- function(entrez_id, output_data_types = c("vector", "list", "data
     
     # Output a data frame
     if (data_type == "data.frame") return(df0)
+}
+
+
+compound2kegg <- function(compound_name, compound_mass = NULL) {
+    cn <- gsub("N-|N,|\U03B1|\U03B2|\U03B3|\U03B4", "", compound_name)  # alpha, beta, gamma, delta
+    # cn <- gsub("\U03B1", "", compound_name)  # alpha
+    # cn <- gsub("\U03B2", "", cn)  # beta
+    # cn <- gsub("\U03B3", "", cn)  # gamma
+    # cn <- gsub("\U03B4", "", cn)  # delta
+    cn <- gsub("/|:|-|,|<|>|\\(|\\)", " ", cn)
+    cn <- strsplit(cn, "\\s")[[1]]
+    cn <- cn[!cn %in% c("", " ")]
+    cn <- cn[!base::duplicated(cn)]
+    
+    ret_id <- KEGGREST::keggFind("compound", cn)
+    ret_id <- names(ret_id)
+    ret_mass <- ret_id  # if ret_id has more than one elements, will be changed as below
+    
+    if (length(ret_id) > 1 & !is.null(compound_mass)) {
+        compound_mass <- round(compound_mass, 2)
+        ret_mass <- KEGGREST::keggFind("compound", compound_mass, option = "exact_mass")
+        ret_mass <- names(ret_mass)
+    }
+    
+    ret <- intersect(ret_id, ret_mass)
+    ret <- vapply(ret, function(x) gsub("cpd:", "", x), character(1), USE.NAMES = FALSE)
+    ret <- paste(ret, collapse = "/")
+    if (ret == "") ret <- NA_character_
+    
+    return(ret)
 }
 
 
